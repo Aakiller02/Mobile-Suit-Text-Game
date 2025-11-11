@@ -6,10 +6,15 @@
 #include <limits>
 #include <thread>
 #include <chrono> //Don't wanna mess with any of these, they're required for the code to even remotely function
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/component.hpp>
+#include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 
 using namespace std;//So that i won't need to std over and over again
 using namespace this_thread; //Apparently this is apart of a function that let me do delays
 using namespace chrono; //This part is the how many seconds/minutes to wait
+using namespace ftxui;
 
 struct suitStorageBase //This is the data for storage system that will let the player the ability to choose,edit,scrap and etc
 {
@@ -65,7 +70,7 @@ string stats(int stat){ // This function returns string for the stats number...B
         return "Medium";
     } else if (stat < 15 && stat > 9){
         return "High";
-    }
+    } else return 0;
 }
 
 int hpInit(int defStat){ // THis function return integer base on the amount of defences a suit have
@@ -75,7 +80,7 @@ int hpInit(int defStat){ // THis function return integer base on the amount of d
         return 100;
     } else if (defStat < 15 && defStat > 9){
         return 150;
-    }
+    } else return 0;
 }
 
 class suitHangar{ // This is the main bread and butter of this Systems function. This is where the player can add, edit, remove or etc for the Suits
@@ -626,6 +631,7 @@ void game (suitHangar hangar){ //Other than the class suitHangar this is also th
 }
 
 int main (){ // Kinda obvious without this. You can't run anything
+    auto screen = ScreenInteractive::Fullscreen();
     suitHangar hangar;
     int playTheGame;
 
@@ -633,21 +639,56 @@ int main (){ // Kinda obvious without this. You can't run anything
     hangar.addToStorage(20, "GMass Unit Type High Mobility", 5,9,3);
     hangar.addToStorage(30, "GMass Unit Type Full Armor", 4,2,10); // Predefine list to ease the debugging process and also a game feature
     while (true){
-        cout << "\nWELCOME TO MECH WARS\n";
-        cout << "\nEnter 1 to Play\n";
-        // cout << "Enter 2 to Skip the story\n";
-        cout << "Enter 0 to Exit\n";
-        cout << "\nChoice: ";
-        cin >> playTheGame;
+        auto renderer = Renderer([&] {
+            Elements lines = {
+                text("Welccome to Mecha Wars!") | bold | center,
+                separator(),
+                text("\n\n\nPress Enter to Play"),
+                separator(),
+                text("Press Q to Exit"),
+            };
 
-        if (playTheGame == 1){
-            intro();
-            hangar.chooseSuit();
-            game(hangar);
-        } else if (playTheGame == 2){
-            hangar.chooseSuit();
-            game(hangar);
-        } else return 0;
+            return vbox(lines) | border | size(WIDTH, GREATER_THAN, 50) |
+                center | bgcolor(Color::Black);
+        });
+
+        auto main_component = CatchEvent(renderer, [&](Event event) {
+            if (event == Event::Character('q') || event == Event::Character('Q')) {
+                screen.ExitLoopClosure()();
+                return true;
+            }
+
+            if (event == Event::Character('2')) {
+                hangar.chooseSuit();
+                game(hangar);
+            }
+
+            if (event == Event::Return){
+                intro();
+                hangar.chooseSuit();
+                game(hangar);
+            }
+
+            return true;
+        });
+
+        screen.Loop(main_component);
+        return 0;
+        // cout << "\nWELCOME TO MECH WARS\n";
+        // cout << "\nEnter 1 to Play\n";
+        // // cout << "Enter 2 to Skip the story\n";
+        // cout << "Enter 0 to Exit\n";
+        // cout << "\nChoice: ";
+        // cin >> playTheGame;
+
+        // if (playTheGame == 1){
+        //     intro();
+        //     hangar.chooseSuit();
+        //     game(hangar);
+        // } else if (playTheGame == 2){
+        //     hangar.chooseSuit();
+        //     game(hangar);
+        // } else return 0;
     }
     
 }
