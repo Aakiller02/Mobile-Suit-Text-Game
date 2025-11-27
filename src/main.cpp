@@ -6,62 +6,11 @@
 #include <limits>
 #include <thread>
 #include <chrono> //Don't wanna mess with any of these, they're required for the code to even remotely function
-#include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/component/component.hpp>
-#include <ftxui/dom/elements.hpp>
-#include <ftxui/screen/color.hpp>
+#include "header/suitHangar.h"
 
 using namespace std;//So that i won't need to std over and over again
 using namespace this_thread; //Apparently this is apart of a function that let me do delays
 using namespace chrono; //This part is the how many seconds/minutes to wait
-using namespace ftxui;
-
-struct suitStorageBase //This is the data for storage system that will let the player the ability to choose,edit,scrap and etc
-{
-    int entryNum;
-    string name;
-    int attackPoints;
-    int speedPoints;
-    int defencePoint;
-    suitStorageBase *next;
-
-    suitStorageBase(int entNum, string name, int att, int spe, int def){//Constructor to ease data inputting
-        this->entryNum = entNum;
-        this->name = name;
-        this->attackPoints = att;
-        this->speedPoints = spe;
-        this->defencePoint = def;
-        this->next = NULL;
-    }
-};
-
-struct playerSuit // This is the data for the players current suit
-{
-    int entryNum;
-    string name;
-    float health;
-    int attackPoints;
-    int speedPoints;
-    int defencePoint;
-
-    playerSuit(){ // Once again Constructors and Default Constructurs for ease of use
-        this->entryNum = 0;
-        this->name = "No Entry";
-        this->health = 0;
-        this->attackPoints = 0;
-        this->speedPoints = 0;
-        this->defencePoint = 0;
-    }
-
-    playerSuit(int entNum, string name, int att, int spe, int def, int hp){
-        this->entryNum = entNum;
-        this->name = name;
-        this->health = hp;
-        this->attackPoints = att;
-        this->speedPoints = spe;
-        this->defencePoint = def;
-    }
-};
 
 string stats(int stat){ // This function returns string for the stats number...Basically converts the points to understandable level of sort
     if (stat < 5){
@@ -82,278 +31,6 @@ int hpInit(int defStat){ // THis function return integer base on the amount of d
         return 150;
     } else return 0;
 }
-
-class suitHangar{ // This is the main bread and butter of this Systems function. This is where the player can add, edit, remove or etc for the Suits
-    suitStorageBase *first, *last; //declare pointer
-    suitStorageBase *newptr;
-    suitStorageBase *current;
-    suitStorageBase *previous;
-    suitStorageBase *delptr;
-
-    public:
-        suitHangar(){
-            first = nullptr;
-            last = nullptr;
-        }
-        playerSuit player;
-
-        void addToStorage(int entNum, string name, int att, int spe, int def){
-            newptr = new suitStorageBase(entNum, name, att, spe, def);
-            
-            if (first == NULL){
-                first = newptr;
-                last = newptr;
-            }else{
-                if(first == last){
-                    if(newptr->entryNum == first->entryNum){
-                        newptr = NULL;
-                        cout << "\nEntry Number already registered. The newest data have been purged!\n";
-                    }else if(newptr->entryNum < first->entryNum){
-                        //add new node at the front
-                        newptr->next = first;
-                        first = newptr;
-                    }else{
-                        //add new node at the rear
-                        last->next = newptr;
-                        last = newptr;
-                    }
-                }else{
-                    if (newptr->entryNum < first->entryNum){
-                        newptr->next = first;
-                        first = newptr;
-                    }else if (newptr->entryNum > last->entryNum){
-                        last->next = newptr;
-                        last = newptr;
-                    }else{
-                        previous = NULL;
-                        current = first;
-                        while (current != NULL)
-                        {
-                            if (newptr->entryNum == current->entryNum){
-                                newptr = NULL;
-                                cout << "\nEntry Number already registered. The newest data have been purged!\n";
-                                break;
-                            }else if (newptr->entryNum > current->entryNum){
-                                previous = current;
-                                current = current->next;
-                            }else{
-                                previous->next = newptr;
-                                newptr->next = current;
-                                break;  
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-
-        void displaySuit(){
-            cout << left << setw(16) << "\nEntry Number" << setw(56) << "Mobile Suit Name" << setw(23) << "Suit Attack LVL" << setw(20) << "Suit Speed LVL" << setw(20) << "Suit Defense LVL" << endl;
-            cout << left << setfill('-') << setw(135) << "" << endl;
-            current = first;
-            while (current != NULL)
-            {
-                cout << setfill(' ') << left << setw(16) <<current->entryNum;
-                cout << left << setw(56) << current->name;
-                cout << setw(23)<<stats(current->attackPoints);
-                cout << setw(20)<<stats(current->speedPoints);
-                cout << setw(20)<<stats(current->defencePoint);
-
-                cout << "\n";
-
-                current = current->next;
-            }
-        }
-        
-        void searchSuitEntry(int searchQuery){
-            int found;
-            cout << left << setw(16) << "\nEntry Number" << setw(56) << "Mobile Suit Name" << setw(23) << "Suit Attack LVL" << setw(20) << "Suit Speed LVL" << setw(20) << "Suit Defense LVL" << endl;
-            cout << left << setfill('-') << setw(135) << "" << endl;
-            current = first;
-            while (current != NULL)
-            {
-                if (current->entryNum == searchQuery){
-                    cout << setfill(' ') << left << setw(16) <<current->entryNum;
-                    cout << left << setw(56) << current->name;
-                    cout << setw(23)<<stats(current->attackPoints);
-                    cout << setw(20)<<stats(current->speedPoints);
-                    cout << setw(20)<<stats(current->defencePoint);
-
-                    found = 1;
-                    cout << "\n";
-                    break;
-                } else{
-                    current = current->next;
-                }
-
-                if (found == 0){
-                    cout << "No Data!";
-                    break;
-                }
-                found = 0;
-            }
-        }
-
-        void searchSuitName(string searchName){
-            int found;
-            cout << left << setw(16) << "\nEntry Number" << setw(56) << "Mobile Suit Name" << setw(23) << "Suit Attack LVL" << setw(20) << "Suit Speed LVL" << setw(20) << "Suit Defense LVL" << endl;
-            cout << left << setfill('-') << setw(135) << "" << endl;
-            current = first;
-            while (current != NULL)
-            {   
-                string findingData = current->name;
-                if(findingData.find(searchName) != string::npos)
-                {
-                    cout << setfill(' ') << left << setw(16) <<current->entryNum;
-                    cout << left << setw(56) << current->name;
-                    cout << setw(23)<<stats(current->attackPoints);
-                    cout << setw(20)<<stats(current->speedPoints);
-                    cout << setw(20)<<stats(current->defencePoint);
-                    
-                    cout << "\n";
-                    found = 1;
-                } 
-
-                current = current->next;
-                
-            }
-
-            if (found == 0){
-                cout << "No Data!";
-            }
-            found = 0;
-        }
-
-        void deleteSuit(){
-            current = first;
-            previous = NULL;
-            delptr = NULL;
-            
-            int delNum;
-
-            cout << "\nPlease enter an Entry Number to delete: ";
-            cin >> delNum;
-            
-            while (current != NULL){
-                if (current->entryNum == delNum){
-                    //check if the list in front or back or middle
-                    if (current == first){//
-                        delptr = first;
-                        if (first->next != NULL){
-                            first = first->next;
-                            delete delptr;
-                        }else{
-                            first = NULL;
-                            last = NULL;
-                        }
-                    } else if (current == last)
-                    {
-                        delptr = current;
-
-                        if (first->next = NULL){
-                            first = NULL;
-                            last = NULL;
-                            delete delptr;
-                        }else{
-                            previous = first;
-                            while (previous->next != last)
-                            {
-                                previous = previous->next;
-                            }
-                            last = previous;
-                            previous->next = NULL;
-                            delete delptr;
-                        }
-                        
-                    } else{
-                        delptr = current;
-                        previous = first;
-                        while (previous->next != current)
-                        {
-                            previous = previous->next;
-                        }
-                        previous->next = current->next;
-                        delete delptr;
-                        
-                    }
-                    
-                }
-
-                current = current->next;
-            }
-        }
-
-        void modifySuit(int suitNum, string name, int att, int spe, int def){
-            int foundToEdit;
-            current = first;
-            while (current != NULL)
-            {
-                if (current->entryNum == suitNum){
-                    current->name = name;
-                    current->attackPoints = att;
-                    current->speedPoints = spe;
-                    current->defencePoint = def;
-
-                    foundToEdit = 1;
-                    cout << "\nThe entry data has been modified!";
-                    cout << "\n";
-                    break;
-                }
-                
-                current = current->next;
-            }
-
-
-            if (foundToEdit == 0){
-                cout << "\nNo Data!";
-            }
-            foundToEdit = 0;
-        }
-
-        void chooseSuit(){
-            incorrectsuitloop:
-            int choice;
-            bool found;
-            displaySuit();
-            
-            cout << "\nChoose which suit you want to use!\n";
-            cout << "Please enter its' Entry Number: ";
-            cin >> choice;
-
-            cout << "\nPlease wait while we're preparing the Mobile Suit";
-
-            current = first;
-            while (current != NULL)
-            {
-                if(current->entryNum == choice)
-                {
-                    player = playerSuit(current->entryNum, current->name, current->attackPoints, current->speedPoints, current->defencePoint, hpInit(current->defencePoint));
-                    found = true;
-                    break;
-                }else{
-                    current = current->next;
-                }
-            }
-
-            if (!found){
-                cout << "\nEntry Number is not Found!\n";
-
-                cout << "\nPress enter to continue...";
-                cin.ignore();
-                cin.get();
-
-                goto incorrectsuitloop;
-            }
-
-            cout << "\n\nThank you for waiting. Your suit is ready to be boarded!";
-            sleep_for(seconds(2));
-            cout << "\nPress enter to continue...";
-            cin.ignore();
-            cin.get();
-        }
-
-};
 
 void intro(){ // This is a function that was put in just for fun
     system("clear");
@@ -408,6 +85,7 @@ void game (suitHangar hangar){ //Other than the class suitHangar this is also th
         cout << "4. EXIT";
 
         cout << "\n\nEnter your selection: ";
+        cin >> ws;
         cin >> menuNum;
         
         if (menuNum == 1){
@@ -522,7 +200,7 @@ void game (suitHangar hangar){ //Other than the class suitHangar this is also th
                 do{
                     string searchQueryString;
                     int searchOption;
-                    cout << "\nSUIT SEACHER\n";
+                    cout << "\nSUIT SEARCHER\n";
                     cout << "-----------------\n";
                     cout << "\n1. Search with Entry Number";
                     cout << "\n2. Search with Name";
@@ -631,7 +309,6 @@ void game (suitHangar hangar){ //Other than the class suitHangar this is also th
 }
 
 int main (){ // Kinda obvious without this. You can't run anything
-    auto screen = ScreenInteractive::Fullscreen();
     suitHangar hangar;
     int playTheGame;
 
@@ -639,56 +316,57 @@ int main (){ // Kinda obvious without this. You can't run anything
     hangar.addToStorage(20, "GMass Unit Type High Mobility", 5,9,3);
     hangar.addToStorage(30, "GMass Unit Type Full Armor", 4,2,10); // Predefine list to ease the debugging process and also a game feature
     while (true){
-        auto renderer = Renderer([&] {
-            Elements lines = {
-                text("Welccome to Mecha Wars!") | bold | center,
-                separator(),
-                text("\n\n\nPress Enter to Play"),
-                separator(),
-                text("Press Q to Exit"),
-            };
+        // auto renderer = Renderer([&] {
 
-            return vbox(lines) | border | size(WIDTH, GREATER_THAN, 50) |
-                center | bgcolor(Color::Black);
-        });
+        //     Elements lines = {
+        //         text("Welcome to Mecha Wars!") | bold | center,
+        //         text("\n"),
+        //         text("\n"),
+        //         text("\n"),
+        //         text("\n"),
+        //         text("Press Enter to Play") | center,
+        //         text("Press Q to Exit") | center,
+        //     };
 
-        auto main_component = CatchEvent(renderer, [&](Event event) {
-            if (event == Event::Character('q') || event == Event::Character('Q')) {
-                screen.ExitLoopClosure()();
-                return true;
-            }
+        //     return vbox(lines) | border | size(WIDTH, GREATER_THAN, 50) |
+        //         center | bgcolor(Color::Black);
+        // });
 
-            if (event == Event::Character('2')) {
-                hangar.chooseSuit();
-                game(hangar);
-            }
+        // auto main_component = CatchEvent(renderer, [&](Event event) {
+        //     if (event == Event::Character('q') || event == Event::Character('Q')) {
+        //         screen.ExitLoopClosure()();
+        //         return true;
+        //     }
 
-            if (event == Event::Return){
-                intro();
-                hangar.chooseSuit();
-                game(hangar);
-            }
+        //     if (event == Event::Character('2')) {
+        //         hangar.chooseSuit();
+        //     }
 
-            return true;
-        });
+        //     if (event == Event::Return){
+        //         intro();
+        //         hangar.chooseSuit();
+        //     }
 
-        screen.Loop(main_component);
-        return 0;
-        // cout << "\nWELCOME TO MECH WARS\n";
-        // cout << "\nEnter 1 to Play\n";
-        // // cout << "Enter 2 to Skip the story\n";
-        // cout << "Enter 0 to Exit\n";
-        // cout << "\nChoice: ";
-        // cin >> playTheGame;
+        //     return true;
+        // });
 
-        // if (playTheGame == 1){
-        //     intro();
-        //     hangar.chooseSuit();
-        //     game(hangar);
-        // } else if (playTheGame == 2){
-        //     hangar.chooseSuit();
-        //     game(hangar);
-        // } else return 0;
+        // screen.Loop(main_component);
+        // return 0;
+        cout << "\nWELCOME TO MECH WARS\n";
+        cout << "\nEnter 1 to Play\n";
+        // cout << "Enter 2 to Skip the story\n";
+        cout << "Enter 0 to Exit\n";
+        cout << "\nChoice: ";
+        cin >> playTheGame;
+
+        if (playTheGame == 1){
+            intro();
+            hangar.chooseSuit();
+            game(hangar);
+        } else if (playTheGame == 2){
+            hangar.chooseSuit();
+            game(hangar);
+        } else return 0;
     }
     
 }
