@@ -5,8 +5,9 @@
 #include <chrono>
 #include "playerSuit.h"
 #include "suitStorageBase.h"
+#include "playerData.h"
 
-class suitHangar{ // This is the main bread and butter of this Systems function. This is where the player can add, edit, remove or etc for the Suits
+struct suitHangar{ // This is the main bread and butter of this Systems function. This is where the player can add, edit, remove or etc for the Suits
     suitStorageBase *first, *last; //declare pointer
     suitStorageBase *newptr;
     suitStorageBase *current;
@@ -19,6 +20,7 @@ class suitHangar{ // This is the main bread and butter of this Systems function.
             last = nullptr;
         }
         playerSuit player;
+        playerData playersData;
 
         std::string stats(int stat){ // This function returns string for the stats number...Basically converts the points to understandable level of sort
             if (stat < 5){
@@ -28,6 +30,14 @@ class suitHangar{ // This is the main bread and butter of this Systems function.
             } else if (stat < 15 && stat > 9){
                 return "High";
             } else return 0;
+        }
+
+        void setPlayerSide(bool side){
+            if (side = true){
+                playersData.playerSide = true;
+            } else {
+                playersData.playerSide = false;
+            }
         }
 
         int hpInit(int defStat){ // THis function return integer base on the amount of defences a suit have

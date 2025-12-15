@@ -1,16 +1,114 @@
 #include <iostream>
 #include <iomanip>
 #include <istream>
+#include <ostream>
+#include <cstdlib>
 #include <string>
 #include <string.h>
 #include <limits>
 #include <thread>
+#include <vector>
 #include <chrono> //Don't wanna mess with any of these, they're required for the code to even remotely function
 #include "header/suitHangar.h"
 
 using namespace std;//So that i won't need to std over and over again
 using namespace this_thread; //Apparently this is apart of a function that let me do delays
 using namespace chrono; //This part is the how many seconds/minutes to wait
+
+struct storyBlock{ //This is a struct that holds all the story lines for the intro function
+    string lines;
+    bool hasChoice;
+    string choice1;
+    string choice2;
+    int waitTime;
+    storyBlock *next;
+
+    storyBlock(string lineSet, bool hasChoice, string choice1, string choice2, int waitTime){
+        this->lines = lineSet;
+        this->hasChoice = hasChoice;
+        this->waitTime = waitTime;
+        this->choice1 = choice1;
+        this->choice2 = choice2;
+        next = nullptr;
+    }
+};
+
+struct storyQueue{ //This is the main story queue that holds all the story lines together
+    storyBlock *front;
+    storyBlock *rear;
+    storyBlock *newptr;
+    storyBlock *tempptr;
+
+    int choiceResult;
+    int waitTime;
+
+    storyQueue(){
+        front = nullptr;
+        rear = nullptr;
+        newptr = nullptr;
+    }
+
+    void enqueue(string lineSet, bool hasChoice, string choice1, string choice2, int waitTime){
+        newptr = new storyBlock(lineSet, hasChoice, choice1, choice2, waitTime);
+
+        if (front == nullptr){
+            front = newptr;
+            rear = newptr;
+        } else {
+            rear->next = newptr;
+            rear = newptr;
+        }
+    }
+
+    string dequeue(){
+        if (front == nullptr){
+            cout << "No more story lines!";
+            return "";
+        } else {
+            tempptr = front;
+            front = front->next;
+            string storyText = tempptr->lines;
+            if (front == nullptr){
+                front = nullptr;
+            }
+            delete tempptr;
+            return storyText;
+        }
+    };
+
+    void dislayStoryLine(){
+        while (front != nullptr){
+            if (front->hasChoice == true){
+                string choice1 = front->choice1;
+                string choice2 = front->choice2;
+                cout << dequeue() << endl;
+                sleep_for(seconds(waitTime));
+                cout << "1. " << choice1 << endl;
+                cout << "2. " << choice2 << endl;
+                cout << "Enter your choice: ";
+                cin >> ws;
+                cin >> choiceResult;
+                break;
+            } else {
+                waitTime = front->waitTime;
+                cout << dequeue() << endl;
+                if (front != nullptr){
+                    sleep_for(seconds(waitTime));
+                } else {
+                    cout << "Press enter to continue..." << endl;
+                    sleep_for(seconds(2));
+                    cin.ignore();
+                    cin.get();
+                    system("clear");
+                }
+            }
+
+            if (front == nullptr){
+                break;
+            }
+        }
+    }
+};
 
 string stats(int stat){ // This function returns string for the stats number...Basically converts the points to understandable level of sort
     if (stat < 5){
@@ -32,35 +130,95 @@ int hpInit(int defStat){ // THis function return integer base on the amount of d
     } else return 0;
 }
 
-void intro(){ // This is a function that was put in just for fun
+void intro(suitHangar player){ // This function is where the queue entry is called
+    storyQueue introStory;
     system("clear");
+    // To use this function, just call introStory.enqueue("A Story Line Text that you want", hasChoice(true/false), "Choice 1", "Choice 2", waitTimeInSeconds);
+    // If hasChoice is false, just put empty string for choice 1 and choice 2; also has choice just like its name mean if your text want to have any kind of choices
+    // The wait time is basically how many seconds you want the text to stay before moving on to the next one
+    introStory.enqueue("In the year 0025...", false, "", "", 2);
+    introStory.enqueue("Humanity has moved its burgening population to space...", false, "", "", 3);
+    introStory.enqueue("Creating a massive divide between people of space and those who still inhabit the earth.", false, "", "", 3);
+    introStory.enqueue("Conflict Arises between both faction...", false, "", "", 4);
+    introStory.enqueue("As days passed by... the tension kept rising and rising...", false, "", "", 3);
+    introStory.enqueue("Until eventually...", false, "", "", 2);
+    introStory.enqueue("A colony sector within site 7, annouced an independance from the Earth Alliance.", false, "", "", 3);
+    introStory.enqueue("Calling themselves as the Principality of Zeon with it they pulled the trigger and prepare themselves...", false, "", "", 4);
+    introStory.enqueue("for war.", false, "", "", 2);
+    // If you want to segment or end the story line, just put the introStory.dislayStoryLine(); function
+    introStory.dislayStoryLine();
+    // then it will dequeue the queue and also diplay and do some logic afterwards
+    introStory.enqueue("A couple of months have past since the first attack was launch...", false, "", "", 4);
+    introStory.enqueue("The Earth Alliance have been struggling to keep up with Zeon's relentless assault...", false, "", "", 4);
+    introStory.enqueue("Especially after the colony drop that hit the Earth Alliance's australia base.", false, "", "", 3);
+    introStory.enqueue("With their backs against the wall, The Earth Alliance have resorted to developing new weapon technology...", false, "", "", 4);
+    introStory.enqueue("Mobile Suits...", false, "", "", 3);
+    introStory.enqueue("Giant Mechs that can match the Zeon's own Mobile Suits in combat...", false, "", "", 4);
+    introStory.enqueue("But Zeon on the other hand, has been improving their own Mobile Suits to match against the Earth Aliances infinite amount of resources...", false, "", "", 4);
+    introStory.enqueue("The war between both faction has reached a stalemate...", false, "", "", 3);
+    introStory.enqueue("Both side suffering heavy losses...", false, "", "", 3);
+    introStory.enqueue("And now, it's your time to step up and change the tide of the war...", false, "", "",4);
+    introStory.enqueue("Choose which side you want to fight for.", true, "The Earth Alliance", "The Zeon Republic", 1);
+    // If you want to make a hasChoice true story line, just put true for hasChoice and importantly displayStoryLine after enqueuing it.
+    introStory.dislayStoryLine();
+    // And only then you can make the logic for the choices
+    while (true){
+        if (introStory.choiceResult == 1 || introStory.choiceResult == 2){
+            break;
+        } else {
+            cout << "\nInvalid Choice! Please choose again.\n";
+            introStory.enqueue("Choose which side you want to fight for.", true, "The Earth Alliance", "The Zeon Republic", 0);
+            introStory.dislayStoryLine();
+        }
+    }
+    if (introStory.choiceResult == 1){
+        player.setPlayerSide(true);
+        introStory.enqueue("\nYou have chosen to fight for the Earth Alliance.", false, "", "", 3);
+    } else {
+        player.setPlayerSide(false);
+        introStory.enqueue("\nYou have chosen to fight for the Zeon Republic.", false, "", "", 3);
+    }
+    introStory.enqueue("", false, "", "",2);
 
-    cout << "\nIn the year 0025...";
-    cout << "\nHumanity has moved its burgening population to space...";
-    sleep_for(seconds(2));
-    cout << "\nCreating a massive divide between people of space and those who still inhabit the earth.";
-    sleep_for(seconds(3));
-    cout << "\nConflict Arises between both faction...";
-    sleep_for(seconds(4));
-    cout << "\nAs days passed by... the tension kept rising and rising...";
-    sleep_for(seconds(3));
-    cout << "\nUntil eventually...";
-    sleep_for(seconds(4));
-    cout << "\nA colony sector within site 7, annouced an independance from the Earth Alliance.";
-    sleep_for(seconds(2));
-    cout << "\nCalling themselves as the Principality of Zeon with it they pulled the trigger and prepare themselves...";
-    sleep_for(seconds(6));
-    cout << "\nfor war.\n";
-    sleep_for(seconds(6));
-
-    cout << "\nPress enter to continue...";
-    cin.ignore();
-    cin.get();
-
-    system("clear");
+    introStory.dislayStoryLine();
 }
 
-void game (suitHangar hangar){ //Other than the class suitHangar this is also the main fuction of the overall system
+void main_storyline(suitHangar hangar){ // Placeholder for future main storyline function
+    storyQueue mainStory;
+    system("clear");
+    mainStory.enqueue("'WRRRYYYYYYYY'", false, "", "", 3);
+    mainStory.enqueue("Warning sounds blaring from all over the hangar.", false, "", "", 3);
+    mainStory.enqueue("'Enemy Sighted!'", false, "", "", 4);
+    mainStory.enqueue("'Everyone prepare to launch!', said the operator.", false, "", "", 2);
+    mainStory.enqueue("With terrified steps...", false, "", "", 3);
+    mainStory.enqueue("You walked wobbly towards your Mobile Suit's cockpit; terrified.", false, "", "", 2);
+    mainStory.enqueue("Knowing that once you enter it...", false, "", "", 6);
+    mainStory.enqueue("It might as well be a walking coffin.", false, "", "", 3);
+    mainStory.enqueue("Taking a deep breath...", false, "", "", 6);
+    mainStory.enqueue("You recounted the reason why you even entered this war.", false, "", "", 3);
+    mainStory.enqueue("Be it for the sake of someone special or the glory of returning home with victory...", false, "", "", 6);
+    mainStory.enqueue("Whatever it is, that's the only thing you can think about in the moment.", false, "", "", 8);
+    mainStory.enqueue("You closed your eyes.", false, "", "", 6);
+    mainStory.enqueue("'" + hangar.player.name + " get ready!'", false, "", "", 8);
+    mainStory.enqueue("Unleashing your breath...", false, "", "", 6);
+    mainStory.enqueue("You push your suit's thrusters to the max.", false, "", "", 3);
+    mainStory.enqueue("'" + hangar.player.name + " Launch!', you screamed.", false, "", "", 5);
+    mainStory.enqueue("With this newfound bravery, you sortied to the battlefield at full force.", false, "", "", 3);
+    mainStory.enqueue("SOORRRRRYYYYYYY IT HAS TO END HERE!!!!..... FOR NOW", false, "", "", 6);
+    mainStory.enqueue("The Game function hasn't been implemented yet!", false, "", "", 1);
+
+    mainStory.dislayStoryLine();
+}
+
+void game_menu (suitHangar hangar, int enterGameOpt){ //Other than the class suitHangar this is also the main fuction of the overall system
+    if (enterGameOpt == 1){
+        intro(hangar);
+    } else if (enterGameOpt == 2){
+        cout << "\nSkipping Story...\n";
+        sleep_for(seconds(2));
+    }
+    hangar.chooseSuit();
+    
     innerloop:
     while (true){
         system("clear");
@@ -70,7 +228,7 @@ void game (suitHangar hangar){ //Other than the class suitHangar this is also th
 
         cout << "MAIN MENU\n";
         cout << "-----------------\n";
-        cout << "PLAYER STATS\n";
+        cout << "PLAYER STATS"<<"\n";
         cout << "-----------------\n";
         cout << "Suit Name    = " << hangar.player.name;
         cout << "\nSuit Health  = " << hangar.player.health;
@@ -89,51 +247,7 @@ void game (suitHangar hangar){ //Other than the class suitHangar this is also th
         cin >> menuNum;
         
         if (menuNum == 1){
-            system("clear");
-            cout << "\n'WRRRYYYYYYYY'";
-            cout << "\nWarning sounds blarring from all over the hangar.";
-            sleep_for(seconds(3));
-            cout << "\n'Enemy Sighted!'";
-            sleep_for(seconds(4));
-            cout << "\n'Everyone prepare to launch!', said the operator.";
-            sleep_for(seconds(2));
-            cout << "\nWith terrified steps...";
-            sleep_for(seconds(3));
-            cout << "\nYou walked wobbly towards your Mobile Suits cockpit; terrified.";
-            sleep_for(seconds(2));
-            cout << "\nKnowing that once you enter it...";
-            sleep_for(seconds(6));
-            cout << "\nIt might as well be a walking coffin.";
-            sleep_for(seconds(3));
-            cout << "\nTaking a deep breath...";
-            sleep_for(seconds(6));
-            cout << "\nYou recounted the reason why you even entered this war.";
-            sleep_for(seconds(3));
-            cout << "\nBe it for the sake of someone special or the glory of returning home with victory...";
-            sleep_for(seconds(6));
-            cout << "\nWhatever it is, That's the only thing you can think about in the moment.";
-            sleep_for(seconds(8));
-            cout << "\nYou closed your eyes.";
-            sleep_for(seconds(6));
-
-            cout << "\n\n'" << hangar.player.name << " get ready!'";
-            sleep_for(seconds(8));
-            cout << "\nUnleashing your breath...";
-            sleep_for(seconds(6));
-            cout << "\nYou push your suits' thrusters to the max.";
-            sleep_for(seconds(3));
-            cout << "\n'" << hangar.player.name << " Launch!', you screamed.";
-            sleep_for(seconds(5));
-            cout << "\nWith this new found bravery you sortied to battlefield at full force.";
-            sleep_for(seconds(3));
-
-            cout << "\n\nSOORRRRRYYYYYYY IT HAS TO END HERE!!!!..... FOR NOW";
-            sleep_for(seconds(8));
-            cout << "\nThe Game function hasn't been implemented yet!\n";
-
-            cout << "\nPress enter to continue...";
-            cin.ignore();
-            cin.get();
+            main_storyline(hangar);
             goto innerloop;
         } else if (menuNum == 2)
         {
@@ -309,6 +423,7 @@ void game (suitHangar hangar){ //Other than the class suitHangar this is also th
 }
 
 int main (){ // Kinda obvious without this. You can't run anything
+    // system("gnome-terminal &");
     suitHangar hangar;
     int playTheGame;
 
@@ -316,42 +431,6 @@ int main (){ // Kinda obvious without this. You can't run anything
     hangar.addToStorage(20, "GMass Unit Type High Mobility", 5,9,3);
     hangar.addToStorage(30, "GMass Unit Type Full Armor", 4,2,10); // Predefine list to ease the debugging process and also a game feature
     while (true){
-        // auto renderer = Renderer([&] {
-
-        //     Elements lines = {
-        //         text("Welcome to Mecha Wars!") | bold | center,
-        //         text("\n"),
-        //         text("\n"),
-        //         text("\n"),
-        //         text("\n"),
-        //         text("Press Enter to Play") | center,
-        //         text("Press Q to Exit") | center,
-        //     };
-
-        //     return vbox(lines) | border | size(WIDTH, GREATER_THAN, 50) |
-        //         center | bgcolor(Color::Black);
-        // });
-
-        // auto main_component = CatchEvent(renderer, [&](Event event) {
-        //     if (event == Event::Character('q') || event == Event::Character('Q')) {
-        //         screen.ExitLoopClosure()();
-        //         return true;
-        //     }
-
-        //     if (event == Event::Character('2')) {
-        //         hangar.chooseSuit();
-        //     }
-
-        //     if (event == Event::Return){
-        //         intro();
-        //         hangar.chooseSuit();
-        //     }
-
-        //     return true;
-        // });
-
-        // screen.Loop(main_component);
-        // return 0;
         cout << "\nWELCOME TO MECH WARS\n";
         cout << "\nEnter 1 to Play\n";
         // cout << "Enter 2 to Skip the story\n";
@@ -360,12 +439,9 @@ int main (){ // Kinda obvious without this. You can't run anything
         cin >> playTheGame;
 
         if (playTheGame == 1){
-            intro();
-            hangar.chooseSuit();
-            game(hangar);
+            game_menu(hangar, 1);
         } else if (playTheGame == 2){
-            hangar.chooseSuit();
-            game(hangar);
+            game_menu(hangar, 2);
         } else return 0;
     }
     
